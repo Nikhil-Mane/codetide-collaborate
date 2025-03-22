@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Menu, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import AuthButtons from './AuthButtons';
 
 export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -68,13 +69,9 @@ export const Navbar: React.FC = () => {
           ))}
         </nav>
 
-        {/* CTA Button */}
+        {/* Auth Buttons */}
         <div className="hidden md:flex items-center">
-          <Button asChild variant="default" size="sm" className="rounded-full px-4">
-            <Link to="/editor" className="font-medium">
-              Try Editor
-            </Link>
-          </Button>
+          <AuthButtons />
         </div>
 
         {/* Mobile Menu Toggle */}
@@ -109,12 +106,8 @@ export const Navbar: React.FC = () => {
                 {item.name}
               </Link>
             ))}
-            <div className="pt-2 pb-1">
-              <Button asChild variant="default" className="w-full rounded-md">
-                <Link to="/editor">
-                  Try Editor
-                </Link>
-              </Button>
+            <div className="pt-2 pb-1 px-4">
+              <AuthButtons />
             </div>
           </div>
         </div>
