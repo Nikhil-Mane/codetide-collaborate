@@ -3,6 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { LayoutDashboard } from 'lucide-react';
 
 export const Hero: React.FC = () => {
   return (
@@ -42,6 +43,12 @@ export const Hero: React.FC = () => {
             <Button asChild size="lg" className="rounded-full px-8 py-6 text-base">
               <Link to="/editor">
                 Try Editor Now
+              </Link>
+            </Button>
+            <Button asChild variant="secondary" size="lg" className="rounded-full px-8 py-6 text-base gap-2">
+              <Link to="/dashboard">
+                <LayoutDashboard size={18} />
+                Go to Dashboard
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="rounded-full px-8 py-6 text-base">

@@ -5,7 +5,7 @@ import CodeEditor from '@/components/CodeEditor';
 import CollaborationPanel from '@/components/CollaborationPanel';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { FileIcon, FolderIcon, ArrowLeftIcon, ArrowRightIcon, SaveIcon, LayoutDashboard } from 'lucide-react';
+import { FileIcon, FolderIcon, ArrowLeftIcon, ArrowRightIcon, SaveIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Editor = () => {
@@ -129,15 +129,6 @@ export default CollaborativeEditor;`;
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      
-      <div className="bg-primary/10 py-2 px-4 text-center">
-        <Link to="/dashboard">
-          <Button variant="outline" size="sm" className="gap-2">
-            <LayoutDashboard size={16} />
-            Go to Dashboard to manage your groups and projects
-          </Button>
-        </Link>
-      </div>
       
       <main className="flex-1 pt-16 flex overflow-hidden">
         <div
