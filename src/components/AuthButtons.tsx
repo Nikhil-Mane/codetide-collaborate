@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, LogOut, Settings } from 'lucide-react';
+import { User, LogOut, Settings, FolderPlus } from 'lucide-react';
 
 export const AuthButtons: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -39,9 +39,15 @@ export const AuthButtons: React.FC = () => {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
+            <Link to="/dashboard" className="cursor-pointer flex w-full">
+              <FolderPlus className="mr-2 h-4 w-4" />
+              <span>My Project Groups</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
             <Link to="/editor" className="cursor-pointer flex w-full">
               <User className="mr-2 h-4 w-4" />
-              <span>My Projects</span>
+              <span>Code Editor</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
