@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Play, Download, Copy, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 import { generateRandomUser } from '@/utils/editorUtils';
 
 interface CodeEditorProps {

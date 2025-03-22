@@ -6,12 +6,21 @@ import CollaborationPanel from '@/components/CollaborationPanel';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { FileIcon, FolderIcon, ArrowLeftIcon, ArrowRightIcon, SaveIcon } from 'lucide-react';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 
 const Editor = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
-  const sampleFiles = [
+  // Updated type definition to include optional 'active' property
+  type FileItem = {
+    id: string;
+    name: string;
+    type: string;
+    active?: boolean;
+    children?: FileItem[];
+  };
+  
+  const sampleFiles: FileItem[] = [
     { id: '1', name: 'index.html', type: 'file' },
     { id: '2', name: 'styles', type: 'folder', children: [
       { id: '21', name: 'main.css', type: 'file' },
