@@ -1,17 +1,16 @@
-
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import CodeEditor from '@/components/CodeEditor';
 import CollaborationPanel from '@/components/CollaborationPanel';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { FileIcon, FolderIcon, ArrowLeftIcon, ArrowRightIcon, SaveIcon } from 'lucide-react';
+import { FileIcon, FolderIcon, ArrowLeftIcon, ArrowRightIcon, SaveIcon, LayoutDashboard } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Editor = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
-  // Updated type definition to include optional 'active' property
   type FileItem = {
     id: string;
     name: string;
@@ -131,8 +130,16 @@ export default CollaborativeEditor;`;
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       
+      <div className="bg-primary/10 py-2 px-4 text-center">
+        <Link to="/dashboard">
+          <Button variant="outline" size="sm" className="gap-2">
+            <LayoutDashboard size={16} />
+            Go to Dashboard to manage your groups and projects
+          </Button>
+        </Link>
+      </div>
+      
       <main className="flex-1 pt-16 flex overflow-hidden">
-        {/* File Explorer Sidebar */}
         <div
           className={cn(
             "h-full border-r transition-all duration-300 overflow-hidden",
@@ -159,7 +166,6 @@ export default CollaborativeEditor;`;
           </div>
         </div>
         
-        {/* Sidebar toggle button (when collapsed) */}
         {isSidebarCollapsed && (
           <Button
             variant="secondary"
@@ -172,7 +178,6 @@ export default CollaborativeEditor;`;
           </Button>
         )}
         
-        {/* Main content area */}
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 p-4 md:p-6 overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
@@ -190,7 +195,6 @@ export default CollaborativeEditor;`;
             <CodeEditor initialCode={sampleCode} />
           </div>
           
-          {/* Collaboration Panel */}
           <div className="hidden md:block w-80 border-l p-0">
             <CollaborationPanel />
           </div>
