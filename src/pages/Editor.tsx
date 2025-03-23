@@ -326,7 +326,10 @@ export default CollaborativeEditor;`;
                 Save
               </Button>
             </div>
-            <CodeEditor initialCode={fileContent || sampleCode} onChange={setFileContent} />
+            <CodeEditor 
+              initialCode={fileContent || sampleCode} 
+              onChange={setFileContent} 
+            />
           </div>
           
           <div className="hidden md:block w-80 border-l p-0">

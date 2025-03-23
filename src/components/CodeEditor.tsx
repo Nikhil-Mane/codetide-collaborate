@@ -9,12 +9,14 @@ interface CodeEditorProps {
   initialCode?: string;
   language?: string;
   readOnly?: boolean;
+  onChange?: (code: string) => void;
 }
 
 export const CodeEditor: React.FC<CodeEditorProps> = ({
   initialCode = 'console.log("Hello, world!");',
   language = 'javascript',
   readOnly = false,
+  onChange,
 }) => {
   const [code, setCode] = useState(initialCode);
   const [output, setOutput] = useState('');
@@ -43,6 +45,12 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (onChange) {
+      onChange(code);
+    }
+  }, [code, onChange]);
 
   const runCode = () => {
     setIsRunning(true);
@@ -135,6 +143,10 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     return cursors;
   };
 
+  const handleCodeChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setCode(e.target.value);
+  };
+
   return (
     <div className={cn(
       "glass-panel rounded-xl overflow-hidden border shadow-lg",
@@ -183,7 +195,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
       <div className="relative overflow-auto bg-background/50 text-left">
         <textarea
           value={code}
-          onChange={(e) => setCode(e.target.value)}
+          onChange={handleCodeChange}
           className={cn(
             "w-full font-mono text-sm p-4 min-h-[300px] resize-none focus:outline-none",
             "bg-transparent",
