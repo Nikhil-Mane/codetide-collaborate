@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { createProject } from '@/services/projectService';
+import { useNavigate } from 'react-router-dom';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Project name must be at least 2 characters" }),
@@ -30,6 +32,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   open,
   onOpenChange,
 }) => {
+  const navigate = useNavigate();
   const form = useForm<CreateProjectFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -41,18 +44,23 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 
   const onSubmit = async (values: CreateProjectFormValues) => {
     try {
-      console.log('Creating project:', values, 'for group:', groupId);
-      // TODO: Replace with actual API call
+      const newProject = await createProject(
+        groupId,
+        values.name,
+        values.language,
+        values.description
+      );
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.success(`Project "${values.name}" created successfully!`);
-      form.reset();
-      onOpenChange(false);
+      if (newProject) {
+        form.reset();
+        onOpenChange(false);
+        
+        // Navigate to the editor with this project
+        navigate(`/editor?projectId=${newProject.id}&groupId=${groupId}`);
+      }
     } catch (error) {
-      console.error('Error creating project:', error);
-      toast.error('Failed to create project. Please try again.');
+      console.error('Error in form submission:', error);
+      toast.error('An unexpected error occurred. Please try again.');
     }
   };
 
@@ -128,10 +136,12 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
               )}
             />
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={form.formState.isSubmitting}>
                 Cancel
               </Button>
-              <Button type="submit">Create Project</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? 'Creating...' : 'Create Project'}
+              </Button>
             </DialogFooter>
           </form>
         </Form>

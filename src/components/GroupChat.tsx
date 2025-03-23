@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Send } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { fetchGroupChatMessages, sendChatMessage, subscribeToGroupChat } from '@/services/chatService';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface GroupChatProps {
   groupId: string;
@@ -25,39 +27,28 @@ const GroupChat: React.FC<GroupChatProps> = ({ groupId }) => {
   const { user } = useAuth();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Mock data for initial messages - will be replaced with actual API calls
   useEffect(() => {
-    // Simulate fetching messages from API
-    const initialMessages: ChatMessage[] = [
-      {
-        id: '1',
-        userId: '2',
-        userName: 'Jane Smith',
-        userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=jane',
-        content: 'Hello everyone! How are we doing with the authentication module?',
-        timestamp: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-      },
-      {
-        id: '2',
-        userId: '3',
-        userName: 'Bob Johnson',
-        userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=bob',
-        content: 'I\'ve completed the login form, but still working on the password reset feature.',
-        timestamp: new Date(Date.now() - 43200000).toISOString(), // 12 hours ago
-      },
-      {
-        id: '3',
-        userId: '4',
-        userName: 'Alice Williams',
-        userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alice',
-        content: 'Great progress! I\'ll help with the email verification part.',
-        timestamp: new Date(Date.now() - 21600000).toISOString(), // 6 hours ago
-      }
-    ];
-    
-    setMessages(initialMessages);
+    const loadMessages = async () => {
+      setIsLoading(true);
+      const fetchedMessages = await fetchGroupChatMessages(groupId);
+      setMessages(fetchedMessages);
+      setIsLoading(false);
+    };
+
+    loadMessages();
+
+    // Set up real-time subscription
+    const unsubscribe = subscribeToGroupChat(groupId, (newMessage) => {
+      setMessages((prev) => [...prev, newMessage]);
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [groupId]);
 
   // Scroll to bottom whenever messages change
@@ -65,21 +56,22 @@ const GroupChat: React.FC<GroupChatProps> = ({ groupId }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSendMessage = () => {
-    if (!message.trim()) return;
+  const handleSendMessage = async () => {
+    if (!message.trim() || !user) return;
     
-    // In a real app, this would be sent to a backend API
-    const newMessage: ChatMessage = {
-      id: Date.now().toString(),
-      userId: user!.id,
-      userName: user!.name,
-      userAvatar: user!.avatar,
-      content: message,
-      timestamp: new Date().toISOString(),
-    };
-    
-    setMessages([...messages, newMessage]);
-    setMessage('');
+    try {
+      setIsSending(true);
+      const newMessage = await sendChatMessage(groupId, message);
+      
+      if (newMessage) {
+        // The message will be added via the subscription
+        setMessage('');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const formatTimestamp = (timestamp: string) => {
@@ -106,37 +98,57 @@ const GroupChat: React.FC<GroupChatProps> = ({ groupId }) => {
       </div>
       
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg) => (
-          <div key={msg.id} className={`flex ${msg.userId === user?.id ? 'justify-end' : 'justify-start'}`}>
-            <div className={`
-              flex max-w-[80%] ${msg.userId === user?.id ? 'flex-row-reverse' : 'flex-row'}
-            `}>
-              <Avatar className="h-8 w-8 flex-shrink-0 mx-2">
-                <AvatarImage src={msg.userAvatar} alt={msg.userName} />
-                <AvatarFallback>{msg.userName.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div>
-                <div className={`
-                  rounded-lg px-4 py-2 inline-block
-                  ${msg.userId === user?.id 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-muted text-foreground'}
-                `}>
-                  {msg.content}
+        {isLoading ? (
+          // Loading state
+          Array(3).fill(0).map((_, i) => (
+            <div key={i} className="flex items-start gap-3">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <div className="space-y-1">
+                <div className="flex items-center">
+                  <Skeleton className="h-4 w-20 mr-2" />
+                  <Skeleton className="h-3 w-12" />
                 </div>
-                <div className={`
-                  text-xs text-muted-foreground mt-1
-                  ${msg.userId === user?.id ? 'text-right' : 'text-left'}
-                `}>
-                  {msg.userId !== user?.id && (
-                    <span className="font-medium mr-2">{msg.userName}</span>
-                  )}
-                  {formatTimestamp(msg.timestamp)}
+                <Skeleton className="h-16 w-48" />
+              </div>
+            </div>
+          ))
+        ) : messages.length === 0 ? (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-muted-foreground">No messages yet. Be the first to send one!</p>
+          </div>
+        ) : (
+          messages.map((msg) => (
+            <div key={msg.id} className={`flex ${msg.userId === user?.id ? 'justify-end' : 'justify-start'}`}>
+              <div className={`
+                flex max-w-[80%] ${msg.userId === user?.id ? 'flex-row-reverse' : 'flex-row'}
+              `}>
+                <Avatar className="h-8 w-8 flex-shrink-0 mx-2">
+                  <AvatarImage src={msg.userAvatar} alt={msg.userName} />
+                  <AvatarFallback>{msg.userName.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className={`
+                    rounded-lg px-4 py-2 inline-block
+                    ${msg.userId === user?.id 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-muted text-foreground'}
+                  `}>
+                    {msg.content}
+                  </div>
+                  <div className={`
+                    text-xs text-muted-foreground mt-1
+                    ${msg.userId === user?.id ? 'text-right' : 'text-left'}
+                  `}>
+                    {msg.userId !== user?.id && (
+                      <span className="font-medium mr-2">{msg.userName}</span>
+                    )}
+                    {formatTimestamp(msg.timestamp)}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
         <div ref={messagesEndRef} />
       </div>
       
@@ -147,6 +159,7 @@ const GroupChat: React.FC<GroupChatProps> = ({ groupId }) => {
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Type your message..."
             className="flex-1"
+            disabled={isSending || isLoading || !user}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -157,7 +170,7 @@ const GroupChat: React.FC<GroupChatProps> = ({ groupId }) => {
           <Button 
             onClick={handleSendMessage} 
             size="icon" 
-            disabled={!message.trim()}
+            disabled={!message.trim() || isSending || isLoading || !user}
           >
             <Send size={18} />
             <span className="sr-only">Send message</span>

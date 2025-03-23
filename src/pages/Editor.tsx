@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams, Navigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import CodeEditor from '@/components/CodeEditor';
 import CollaborationPanel from '@/components/CollaborationPanel';
@@ -7,10 +8,144 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { FileIcon, FolderIcon, ArrowLeftIcon, ArrowRightIcon, SaveIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Editor = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [searchParams] = useSearchParams();
+  const projectId = searchParams.get('projectId');
+  const groupId = searchParams.get('groupId');
+  const { isAuthenticated } = useAuth();
   
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [projectData, setProjectData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [projectFiles, setProjectFiles] = useState<any[]>([]);
+  const [activeFile, setActiveFile] = useState<string | null>(null);
+  const [fileContent, setFileContent] = useState('');
+  
+  // Redirect if not logged in
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Redirect if no project ID
+  if (!projectId || !groupId) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  useEffect(() => {
+    const loadProjectData = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Fetch project details
+        const { data: project, error: projectError } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('id', projectId)
+          .single();
+
+        if (projectError) throw projectError;
+        
+        // Fetch project files
+        const { data: files, error: filesError } = await supabase
+          .from('project_files')
+          .select('*')
+          .eq('project_id', projectId)
+          .order('path', { ascending: true });
+          
+        if (filesError) throw filesError;
+        
+        // Organize files into a tree structure
+        const organizedFiles = organizeFilesIntoTree(files);
+        
+        setProjectData(project);
+        setProjectFiles(organizedFiles);
+        
+        // If there are files, select the first one
+        if (files.length > 0) {
+          setActiveFile(files[0].id);
+          setFileContent(files[0].content || '');
+        } else {
+          setFileContent('// No files in this project yet. Create a new file to get started.');
+        }
+        
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error loading project:', error);
+        toast.error('Failed to load project data');
+        setIsLoading(false);
+      }
+    };
+    
+    loadProjectData();
+  }, [projectId]);
+  
+  // Helper function to organize files into a tree structure
+  const organizeFilesIntoTree = (files: any[]) => {
+    if (!files || files.length === 0) {
+      return [];
+    }
+    
+    // This is just placeholder implementation
+    // In a real app, you'd organize by path segments
+    
+    // For now, let's create a simple structure similar to the mock data
+    return files.map(file => ({
+      id: file.id,
+      name: file.path.split('/').pop(),
+      type: file.is_directory ? 'folder' : 'file',
+      active: false,
+      path: file.path,
+      content: file.content
+    }));
+  };
+  
+  const handleFileClick = async (fileId: string) => {
+    try {
+      const file = projectFiles.find(f => f.id === fileId);
+      if (!file) return;
+      
+      if (file.type === 'folder') {
+        // Toggle folder open/closed
+        // In a real implementation, you'd update the expandedFolders state
+      } else {
+        // Load file content
+        setActiveFile(fileId);
+        
+        // In a real implementation, you might fetch the content from the server
+        // if it's not already cached
+        setFileContent(file.content || '');
+        toast.info(`Opened ${file.name}`);
+      }
+    } catch (error) {
+      console.error('Error opening file:', error);
+      toast.error('Failed to open file');
+    }
+  };
+  
+  const handleSaveFile = async () => {
+    if (!activeFile) return;
+    
+    try {
+      // Save the file content to the database
+      const { error } = await supabase
+        .from('project_files')
+        .update({ content: fileContent })
+        .eq('id', activeFile);
+        
+      if (error) throw error;
+      
+      toast.success('File saved successfully');
+    } catch (error) {
+      console.error('Error saving file:', error);
+      toast.error('Failed to save file');
+    }
+  };
+
+  // This is temporary - in a production app you'd use the actual project files
+  // Instead of static ones when the backend integration is not complete
   type FileItem = {
     id: string;
     name: string;
@@ -152,6 +287,7 @@ export default CollaborativeEditor;`;
               </Button>
             </div>
             <div className="flex-1 overflow-y-auto py-2">
+              {/* When backend integration is complete, use projectFiles instead */}
               {renderFileTree(sampleFiles)}
             </div>
           </div>
@@ -173,17 +309,24 @@ export default CollaborativeEditor;`;
           <div className="flex-1 p-4 md:p-6 overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center">
-                <h1 className="text-2xl font-semibold">app.js</h1>
+                <h1 className="text-2xl font-semibold">
+                  {projectData?.name || 'Loading project...'}
+                </h1>
                 <span className="ml-2 text-xs text-muted-foreground">
-                  Last edited: 5 minutes ago
+                  Last edited: {projectData ? new Date(projectData.updated_at).toLocaleString() : 'Loading...'}
                 </span>
               </div>
-              <Button size="sm" className="flex items-center gap-1">
+              <Button 
+                size="sm" 
+                className="flex items-center gap-1"
+                onClick={handleSaveFile}
+                disabled={!activeFile}
+              >
                 <SaveIcon size={14} />
                 Save
               </Button>
             </div>
-            <CodeEditor initialCode={sampleCode} />
+            <CodeEditor initialCode={fileContent || sampleCode} onChange={setFileContent} />
           </div>
           
           <div className="hidden md:block w-80 border-l p-0">

@@ -1,43 +1,58 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileCode, Clock, Users } from 'lucide-react';
+import { fetchGroupProjects } from '@/services/projectService';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ProjectListProps {
   groupId: string;
 }
 
 const ProjectList: React.FC<ProjectListProps> = ({ groupId }) => {
-  // Mock data - will be replaced with actual API calls
-  const projects = [
-    {
-      id: '1',
-      name: 'Authentication System',
-      description: 'User authentication and authorization service',
-      lastUpdated: '2 hours ago',
-      memberCount: 4,
-      language: 'JavaScript',
-    },
-    {
-      id: '2',
-      name: 'Dashboard UI',
-      description: 'Frontend dashboard components and layouts',
-      lastUpdated: '1 day ago',
-      memberCount: 3,
-      language: 'TypeScript',
-    },
-    {
-      id: '3',
-      name: 'API Integration',
-      description: 'External API integration and middleware',
-      lastUpdated: '3 days ago',
-      memberCount: 2,
-      language: 'Python',
-    },
-  ];
+  const [projects, setProjects] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadProjects = async () => {
+      setIsLoading(true);
+      const data = await fetchGroupProjects(groupId);
+      setProjects(data);
+      setIsLoading(false);
+    };
+
+    loadProjects();
+  }, [groupId]);
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[1, 2, 3].map((i) => (
+          <Card key={i} className="overflow-hidden">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start">
+                <Skeleton className="h-6 w-3/4 mb-2" />
+                <Skeleton className="h-6 w-16" />
+              </div>
+              <Skeleton className="h-4 w-full" />
+            </CardHeader>
+            <CardContent className="pb-2">
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-end pt-2">
+              <Skeleton className="h-8 w-20" />
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
   if (projects.length === 0) {
     return (

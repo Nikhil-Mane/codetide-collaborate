@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate, useParams, Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,6 +13,8 @@ import InviteMembersDialog from '@/components/InviteMembersDialog';
 import ProjectList from '@/components/ProjectList';
 import GroupChat from '@/components/GroupChat';
 import GroupMembers from '@/components/GroupMembers';
+import { fetchGroupDetails } from '@/services/groupService';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const GroupDetail = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -20,21 +22,98 @@ const GroupDetail = () => {
   const [activeTab, setActiveTab] = useState('projects');
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
   const [isInviteMembersOpen, setIsInviteMembersOpen] = useState(false);
+  const [groupData, setGroupData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Redirect if not logged in
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  // Mock data - will be replaced with actual API calls
-  const groupData = {
-    id: groupId,
-    name: 'Frontend Team',
-    description: 'Group for frontend development tasks and collaboration',
-    memberCount: 5,
-    projectCount: 3,
-    isAdmin: true,
-  };
+  useEffect(() => {
+    const loadGroupDetails = async () => {
+      if (!groupId) return;
+      
+      setIsLoading(true);
+      const data = await fetchGroupDetails(groupId);
+      setGroupData(data);
+      setIsLoading(false);
+    };
+
+    loadGroupDetails();
+  }, [groupId]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container max-w-6xl mx-auto px-4 py-8 pt-20">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Link to="/dashboard" className="text-sm text-muted-foreground hover:text-foreground">
+                  Dashboard
+                </Link>
+                <span className="text-sm text-muted-foreground">/</span>
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <Skeleton className="h-8 w-48 mb-2" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-10 w-32" />
+              <Skeleton className="h-10 w-32" />
+            </div>
+          </div>
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-3 max-w-md">
+              <TabsTrigger value="projects" className="flex items-center gap-2">
+                <FolderPlus size={16} />
+                Projects
+              </TabsTrigger>
+              <TabsTrigger value="members" className="flex items-center gap-2">
+                <Users size={16} />
+                Members
+              </TabsTrigger>
+              <TabsTrigger value="chat" className="flex items-center gap-2">
+                <MessageSquare size={16} />
+                Group Chat
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="projects" className="mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-48 w-full" />
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </main>
+      </div>
+    );
+  }
+
+  if (!groupData) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container max-w-6xl mx-auto px-4 py-8 pt-20">
+          <div className="text-center py-12">
+            <h3 className="text-xl font-medium mb-2">Group not found</h3>
+            <p className="text-muted-foreground mb-6">
+              The group you're looking for doesn't exist or you don't have access to it.
+            </p>
+            <Button asChild>
+              <Link to="/dashboard">Return to Dashboard</Link>
+            </Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

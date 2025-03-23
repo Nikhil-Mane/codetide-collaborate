@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { UserPlus, X } from 'lucide-react';
+import { inviteToGroup } from '@/services/groupService';
 
 interface InviteMembersDialogProps {
   groupId: string;
@@ -20,6 +21,7 @@ const InviteMembersDialog: React.FC<InviteMembersDialogProps> = ({
 }) => {
   const [email, setEmail] = useState('');
   const [invitedEmails, setInvitedEmails] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddEmail = () => {
     // Simple email validation
@@ -49,18 +51,15 @@ const InviteMembersDialog: React.FC<InviteMembersDialogProps> = ({
     }
 
     try {
-      console.log('Sending invites to:', invitedEmails, 'for group:', groupId);
-      // TODO: Replace with actual API call
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.success(`Invitations sent to ${invitedEmails.length} email(s)`);
+      setIsSubmitting(true);
+      await inviteToGroup(groupId, invitedEmails);
       setInvitedEmails([]);
       onOpenChange(false);
     } catch (error) {
-      console.error('Error sending invites:', error);
-      toast.error('Failed to send invitations. Please try again.');
+      console.error('Error in sending invites:', error);
+      toast.error('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -120,12 +119,12 @@ const InviteMembersDialog: React.FC<InviteMembersDialogProps> = ({
         )}
         
         <DialogFooter className="mt-4">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button onClick={handleSendInvites} className="flex items-center gap-2">
+          <Button onClick={handleSendInvites} className="flex items-center gap-2" disabled={isSubmitting}>
             <UserPlus size={16} />
-            Send Invites
+            {isSubmitting ? 'Sending...' : 'Send Invites'}
           </Button>
         </DialogFooter>
       </DialogContent>

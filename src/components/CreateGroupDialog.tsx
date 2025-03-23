@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { createGroup } from '@/services/groupService';
+import { useNavigate } from 'react-router-dom';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Group name must be at least 2 characters" }),
@@ -26,6 +28,7 @@ const CreateGroupDialog: React.FC<CreateGroupDialogProps> = ({
   open,
   onOpenChange,
 }) => {
+  const navigate = useNavigate();
   const form = useForm<CreateGroupFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -36,18 +39,17 @@ const CreateGroupDialog: React.FC<CreateGroupDialogProps> = ({
 
   const onSubmit = async (values: CreateGroupFormValues) => {
     try {
-      console.log('Creating group:', values);
-      // TODO: Replace with actual API call
+      const newGroup = await createGroup(values.name, values.description);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.success(`Group "${values.name}" created successfully!`);
-      form.reset();
-      onOpenChange(false);
+      if (newGroup) {
+        form.reset();
+        onOpenChange(false);
+        // Navigate to the new group
+        navigate(`/groups/${newGroup.id}`);
+      }
     } catch (error) {
-      console.error('Error creating group:', error);
-      toast.error('Failed to create group. Please try again.');
+      console.error('Error in form submission:', error);
+      toast.error('An unexpected error occurred. Please try again.');
     }
   };
 
@@ -96,7 +98,9 @@ const CreateGroupDialog: React.FC<CreateGroupDialogProps> = ({
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit">Create Group</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? 'Creating...' : 'Create Group'}
+              </Button>
             </DialogFooter>
           </form>
         </Form>
