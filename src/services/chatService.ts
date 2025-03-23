@@ -28,8 +28,8 @@ export async function fetchGroupChatMessages(groupId: string) {
     return messages.map(message => ({
       id: message.id,
       userId: message.user_id,
-      userName: message.users?.name || 'Unknown User',
-      userAvatar: message.users?.avatar || null,
+      userName: message.users ? message.users.name : 'Unknown User',
+      userAvatar: message.users ? message.users.avatar : null,
       content: message.content,
       timestamp: message.created_at
     }));
@@ -78,8 +78,8 @@ export async function sendChatMessage(groupId: string, content: string) {
     return {
       id: message.id,
       userId: message.user_id,
-      userName: message.users?.name || 'Unknown User',
-      userAvatar: message.users?.avatar || null,
+      userName: message.users ? message.users.name : 'Unknown User',
+      userAvatar: message.users ? message.users.avatar : null,
       content: message.content,
       timestamp: message.created_at
     };
@@ -120,8 +120,8 @@ export function subscribeToGroupChat(groupId: string, onNewMessage: (message: an
         onNewMessage({
           id: message.id,
           userId: message.user_id,
-          userName: message.users?.name || 'Unknown User',
-          userAvatar: message.users?.avatar || null,
+          userName: message.users ? message.users.name : 'Unknown User',
+          userAvatar: message.users ? message.users.avatar : null,
           content: message.content,
           timestamp: message.created_at
         });
